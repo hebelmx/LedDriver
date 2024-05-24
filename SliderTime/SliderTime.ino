@@ -48,9 +48,9 @@ void initializeLCD() {
     Paint_SetRotate(90);
     LCD_Clear(BLACK);
 
-    Paint_DrawString_EN(20, 50, "Level... 0", &Font20, BLACK, GREEN);
+    
       
-   configTime(utcOffsetInSeconds, 0, ntpServer);
+    configTime(utcOffsetInSeconds, 0, ntpServer);
     while (!time(nullptr)) {
     delay(1000);
     Serial.println("Waiting for time sync...");
@@ -107,11 +107,18 @@ void printTimeAndDate()
     extractDateAndTime(timeString, date, time);
 
     // Display the time and date
-    Paint_DrawString_EN(55, 32, time, &Font16, BLACK, WHITE);  // Reduced font size
-    Paint_DrawString_EN(15, 60, date, &Font16, BLACK, WHITE);  // Reduced font size
-    Paint_DrawString_EN(15, 80, (date + 6), &Font16, BLACK, WHITE);  // Display the day of the week
-    Paint_DrawString_EN(75, 80, (date + 10), &Font16, BLACK, WHITE);  // Display the month
-    Paint_DrawString_EN(135, 80, (date + 14), &Font16, BLACK, WHITE);  // Display the day of the month
+    Paint_DrawString_EN(55, 40, time, &Font20, BLACK, GREEN);  // Reduced font size
+    Paint_DrawString_EN(15, 80, date, &Font20, BLACK, GREEN);  // Reduced font size
+    Paint_DrawString_EN(75, 80, (date + 6), &Font20, BLACK, GREEN);  // Display the day of the week
+    Paint_DrawString_EN(135, 80, (date + 10), &Font20, BLACK, GREEN);  // Display the month
+    Paint_DrawString_EN(170, 80, (date + 14), &Font20, BLACK, GREEN);  // Display the day of the month
+}
+
+void printLevel(){
+    // Display the level
+      Paint_DrawString_EN(20, 10, "Level:", &Font24, BLACK, WHITE);
+      Paint_DrawString_EN(90, 10, String(input).c_str(), &Font24, RED, WHITE);  // Adjusted to be on the same line as "Level:"
+
 }
 
 BLYNK_WRITE(V0)
@@ -128,12 +135,8 @@ BLYNK_WRITE(V0)
 
   ledcFade(GPIO_BLINK_PWM_1 , start_duty,  outputIntensity,  MAX_FADE_TIME_MS);
 
-  if (isLCDInitialized) {
-    
-      // Display the level
-      Paint_DrawString_EN(20, 10, "Level:", &Font20, BLACK, WHITE);
-      Paint_DrawString_EN(90, 10, String(input).c_str(), &Font24, RED, WHITE);  // Adjusted to be on the same line as "Level:"
-
+  if (isLCDInitialized) {    
+      printLevel();
     }  
 }
 

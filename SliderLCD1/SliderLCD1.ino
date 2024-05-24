@@ -9,7 +9,6 @@
 
 #define BLYNK_TEMPLATE_ID "TMPL2vDz5-cY5"
 #define BLYNK_TEMPLATE_NAME "LED"
-//#define BLYNK_AUTH_TOKEN "FQ9U0zWMJPOJyzw82vjgFEvX3LR6kJbW"
 
 #define BLYNK_FIRMWARE_VERSION        "0.1.0"
 
@@ -35,11 +34,8 @@
 #define LOW_DUTY_CYCLE 25
 #define MAX_FADE_TIME_MS 1200
 
-
-void setup() {
-    Serial.begin(115200);
-    delay(100);
-
+bool isLCDInitialized = false;
+void initializeLCD() {
     Config_Init();
     LCD_Init();
     LCD_SetBacklight(100);
@@ -48,7 +44,15 @@ void setup() {
     LCD_Clear(BLACK);
 
     Paint_DrawString_EN(20, 50, "Level...", &Font20, BLACK, GREEN);
-    Paint_DrawString_EN(80, 82,  0, &Font20, BLACK, GREEN);
+    Paint_DrawString_EN(80, 82, "0", &Font20, BLACK, GREEN);
+    
+    isLCDInitialized = true;
+}
+
+void setup() {
+    Serial.begin(115200);
+    delay(100);
+
     ledcAttachChannel(GPIO_BLINK_PWM_1,FREQUENCY,RESOLUTION,CHANNEL);   
     ledcWrite(GPIO_BLINK_PWM_1, 0);  
 
@@ -60,7 +64,7 @@ BLYNK_WRITE(V0)
 {
   
   int input = param.asInt();  // Input from 0 to 1000
-  Serial.print("level ");
+  Serial.print("Level... ");
   Serial.println(input);
   double gamma = 2.2;  // Common gamma value for perceptual linearity
   double normalizedInput = input / 1000.0;  // Normalize input to range [0, 1]
@@ -68,23 +72,26 @@ BLYNK_WRITE(V0)
   int outputIntensity = static_cast<int>(correctedOutput * 700);  // Scale back to [0, 1000]
   int start_duty =ledcRead(GPIO_BLINK_PWM_1);
 
-  Paint_DrawString_EN(20, 50, "Level...", &Font20, BLACK, GREEN);
-  Paint_DrawString_EN(80, 82,  0, &Font20, BLACK, GREEN);
-
   ledcFade(GPIO_BLINK_PWM_1 , start_duty,  outputIntensity,  MAX_FADE_TIME_MS);
+
+  if (isLCDInitialized) {
+        Paint_DrawString_EN(20, 50, "Level...", &Font20, BLACK, GREEN);
+        Paint_DrawString_EN(140, 50, String(input).c_str(), &Font20, BLACK, GREEN);  // Update display with string conversion
+
+    }
+  
   
 }
 
-int i = 0;
+
 void loop() {
     BlynkEdgent.run();
     Blynk.syncVirtual(V0);
-    i++;
-    if (i>1000) {
-      i=0;
-    } 
-    //ledcWrite(GPIO_BLINK_PWM_1,  i);  
-    Serial.print("Counter = ");
-    Serial.println(i);
-    delay(1000);    
+
+     // Initialize the LCD only after Blynk is connected
+    if (Blynk.connected() && !isLCDInitialized) {
+        initializeLCD();
+    }
+
+    delay(200);    
 }
